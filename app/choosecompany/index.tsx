@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     gap: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
   },
   label: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
 });
