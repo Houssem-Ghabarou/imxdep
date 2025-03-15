@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "420666729017",
+    "project_id": "imxdep",
+    "storage_bucket": "imxdep.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:420666729017:android:df47821f5437ecdcda63e8",
+        "android_client_info": {
+          "package_name": "com.imaxeam.imxdep"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "420666729017-7olsdp1cteg529cbne36j7jar236lepa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.imaxeam.imxdep",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "420666729017-lgrs284d2frb7uc626md9gdf7o86337r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7IvuMI4rQ90MR2qF4jQiDd9E4-a8nlHQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "420666729017-lgrs284d2frb7uc626md9gdf7o86337r.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "420666729017-6e7g7sona5gvq8q6o447mr3g1reod47c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.imaxeam.imxdep"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

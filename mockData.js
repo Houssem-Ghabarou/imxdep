@@ -1,0 +1,42 @@
+// List of common fruits
+export const fruits = [
+  { id: 1, label: "Apple", value: "apple" },
+  { id: 2, label: "Banana", value: "banana" },
+  { id: 3, label: "Cherry", value: "cherry" },
+  { id: 4, label: "Dragon Fruit", value: "dragon_fruit" },
+  { id: 5, label: "Elderberry", value: "elderberry" },
+  { id: 6, label: "Fig", value: "fig" },
+  { id: 7, label: "Grape", value: "grape" },
+  { id: 8, label: "Honeydew", value: "honeydew" },
+  { id: 9, label: "Kiwi", value: "kiwi" },
+  { id: 10, label: "Lemon", value: "lemon" },
+  { id: 11, label: "Mango", value: "mango" },
+  { id: 12, label: "Nectarine", value: "nectarine" },
+  { id: 13, label: "Orange", value: "orange" },
+  { id: 14, label: "Pineapple", value: "pineapple" },
+  { id: 15, label: "Quince", value: "quince" },
+  { id: 16, label: "Raspberry", value: "raspberry" },
+  { id: 17, label: "Strawberry", value: "strawberry" },
+  { id: 18, label: "Tangerine", value: "tangerine" },
+  { id: 19, label: "Watermelon", value: "watermelon" },
+  { id: 20, label: "Zucchini", value: "zucchini" },
+];
+
+// List of popular countries
+export const countries = [
+  { id: 1, label: "United States", value: "us" },
+  { id: 2, label: "United Kingdom", value: "uk" },
+  { id: 3, label: "Canada", value: "ca" },
+  { id: 4, label: "Australia", value: "au" },
+  { id: 5, label: "Gersmany", value: "de" },
+  { id: 6, label: "Frasnce", value: "fr" },
+  { id: 7, label: "Japan", value: "jp" },
+  { id: 8, label: "China", value: "cn" },
+  { id: 9, label: "Brazil", value: "br" },
+  { id: 10, label: "India", value: "in" },
+  { id: 11, label: "Italy", value: "it" },
+  { id: 12, label: "Spain", value: "es" },
+  { id: 13, label: "Mexico", value: "mx" },
+  { id: 14, label: "South Korea", value: "kr" },
+  { id: 15, label: "Russia", value: "ru" },
+];
