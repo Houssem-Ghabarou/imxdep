@@ -17,6 +17,7 @@ const ChooseCompany = () => {
   const router = useRouter();
   const [selectedCompany, setSelectedCompany] = useState<Company>();
   const [companies, setCompanies] = useState<Company[]>([]);
+  console.log(companies, "companies");
   const [loading, setLoading] = useState(true);
 
   const getCompanies = async () => {
@@ -68,6 +69,7 @@ const ChooseCompany = () => {
             displayBy="companyName"
             height={60}
           />
+
           <CustomButton
             title="Continue"
             onPressFunction={navigateToDepenseApport}

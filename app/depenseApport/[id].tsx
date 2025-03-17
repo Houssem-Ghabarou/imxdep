@@ -13,7 +13,6 @@ import DepenseApportHeader from "@/components/screens/depenseapport/DepenseAppor
 import InputSearch from "@/components/shared/InputSearch";
 import DepenseApportFooter from "@/components/screens/depenseapport/DepenseApportFooter";
 import { DepenseApportInterface } from "@/types/depenseapport";
-
 type CompanyRoute = Company & Route;
 
 const DepenseApport = () => {
@@ -37,6 +36,17 @@ const DepenseApport = () => {
       const depenseData = depenseApportSnapshot.docs.map((doc) =>
         doc.data()
       ) as DepenseApportInterface[];
+      // console.log(depenseData[1].category, "depenseData");
+
+      // if (depenseData[1].category) {
+      //   //fetch from firenbase
+      //   const categoryCollection = firestore()
+      //     .collection("Company")
+      //     .doc(companyId)
+      //     .collection("category");
+      //   const categorySnapshot = await categoryCollection.get();
+      //   console.log(categorySnapshot, "categorySnapshot");
+      // }
       setDepenseApport(depenseData);
       console.log("Depense data:", depenseData);
     } else {
@@ -123,7 +133,7 @@ const DepenseApport = () => {
       />
 
       {/* Footer */}
-      <DepenseApportFooter />
+      <DepenseApportFooter companyId={id} />
     </View>
   );
 };

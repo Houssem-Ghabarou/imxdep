@@ -1,17 +1,42 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
-const DepenseApportFooter = () => {
+interface DepenseApportFooterProps {
+  companyId: string;
+}
+const DepenseApportFooter = ({ companyId }: DepenseApportFooterProps) => {
+  const router = useRouter();
+
+  const navigateToDepenseApportDetails = (props: any) => {
+    router.push({
+      pathname: "/depenseApport/details",
+      params: {
+        type: props.type,
+        companyId: props.companyId,
+      },
+    });
+  };
   return (
     <View style={styles.container}>
       {/* Green button with + */}
-      <TouchableOpacity style={[styles.button, styles.greenButton]}>
+      <TouchableOpacity
+        style={[styles.button, styles.greenButton]}
+        onPress={() =>
+          navigateToDepenseApportDetails({ type: "apport", companyId })
+        }
+      >
         <Ionicons name="add" size={24} color="white" />
       </TouchableOpacity>
 
       {/* Red button with - */}
-      <TouchableOpacity style={[styles.button, styles.redButton]}>
+      <TouchableOpacity
+        style={[styles.button, styles.redButton]}
+        onPress={() =>
+          navigateToDepenseApportDetails({ type: "depense", companyId })
+        }
+      >
         <Ionicons name="remove" size={24} color="white" />
       </TouchableOpacity>
     </View>

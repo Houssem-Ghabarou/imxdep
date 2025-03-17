@@ -3,28 +3,44 @@ import {
   View,
   Text,
   TextInput,
-  FlatList,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 //@ts-ignore
 import Dropdownimg from "../../assets/images/dropdown.svg";
 
 interface DropdownProps {
-  items: { [key: string]: any }[]; // Array of objects
+  items?: { [key: string]: any }[] & { [index: string]: any }; // Array of objects
   placeholder?: string;
-  onSelect: (item: { [key: string]: any }) => void; // Returning the whole object
+  onSelect?: (item: any) => void; // Returning the whole object
   height?: number;
-  displayBy: string; // Property to display from each object
+  displayBy?: string; // Property to display from each object
 }
 
+const mockProps = {
+  items: [
+    { id: 1, name: "John Doe" },
+    { id: 2, name: "Jane Doe" },
+    { id: 3, name: "John Smith" },
+    { id: 4, name: "Jane Smisth" },
+    { id: 4, name: "Jane s" },
+    { id: 4, name: "Jane Smxith" },
+    { id: 4, name: "Jane Smitah" },
+    { id: 4, name: "Jane Smitxh" },
+  ],
+  placeholder: "Search...",
+  onSelect: (item: { [key: string]: any }) => console.log(item),
+  height: 60,
+  displayBy: "name",
+};
 const SearchableDropdown: React.FC<DropdownProps> = ({
-  items,
+  items = mockProps.items,
   placeholder = "Search...",
-  onSelect,
-  height,
-  displayBy, // Dynamic key to display
+  onSelect = mockProps.onSelect,
+  height = mockProps.height,
+  displayBy = mockProps.displayBy,
 }) => {
   const [searchText, setSearchText] = useState("");
   const [filteredItems, setFilteredItems] = useState(items);
@@ -73,26 +89,26 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
       {/* Dropdown List */}
       {isDropdownVisible && (
         <View style={styles.dropdown}>
-          <FlatList
-            data={
-              filteredItems.length > 0
-                ? filteredItems
-                : [{ [displayBy]: searchText }]
-            }
-            keyExtractor={(item, index) => index.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => handleSelect(item)}
-                style={styles.item}
-              >
-                <Text>{item[displayBy]}</Text>
-                {/* Ensure this is inside a <Text> component */}
-                {!items.some((obj) => obj[displayBy] === item[displayBy]) && (
-                  <Ionicons name="add-circle" size={20} color="green" />
-                )}
-              </TouchableOpacity>
-            )}
-          />
+          <ScrollView nestedScrollEnabled={true}>
+            {(filteredItems.length > 0
+              ? filteredItems
+              : [{ [displayBy]: searchText }]
+            ).map((item: { [key: string]: any }, index: number) => {
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handleSelect(item)}
+                  style={styles.item}
+                >
+                  <Text>{item[displayBy]}</Text>
+                  {!items.some(
+                    (obj: { [key: string]: any }) =>
+                      obj[displayBy] === item[displayBy]
+                  ) && <Ionicons name="add-circle" size={20} color="green" />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
       )}
     </View>

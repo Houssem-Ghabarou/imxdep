@@ -8,9 +8,10 @@ const DepenseApportHeader = ({ companyName }: headerProps) => {
   const router = useRouter();
 
   const gotoChooseCompany = () => {
-    router.push({
-      pathname: "/choosecompany",
-    });
+    router.back();
+    // router.push({
+    //   pathname: "/choosecompany",
+    // });
   };
   return (
     <View
