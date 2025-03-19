@@ -17,6 +17,10 @@ interface DropdownProps {
   onSelect?: (item: any) => void; // Returning the whole object
   height?: number;
   displayBy?: string; // Property to display from each object
+  value?: string;
+  setSelectedCategory?: React.Dispatch<
+    React.SetStateAction<{ [key: string]: any[] }>
+  >;
 }
 
 const mockProps = {
@@ -41,27 +45,43 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
   onSelect = mockProps.onSelect,
   height = mockProps.height,
   displayBy = mockProps.displayBy,
+  value,
+  setSelectedCategory,
 }) => {
   const [searchText, setSearchText] = useState("");
   const [filteredItems, setFilteredItems] = useState(items);
   const [isDropdownVisible, setDropdownVisible] = useState(false);
 
+  interface handleSelect {
+    item: { [key: string]: any };
+    dropdownvalue?: boolean;
+  }
+  const handleSelect = ({ item, dropdownvalue }: handleSelect) => {
+    setSearchText(item[displayBy]); // Set the display value as search text
+    setDropdownVisible(dropdownvalue || false);
+    onSelect(item);
+  };
   const handleSearch = (text: string) => {
     setSearchText(text);
     setDropdownVisible(true);
-    setFilteredItems(
-      items.filter((item) =>
+    setFilteredItems([
+      ...(!items.some(
+        (item) => item[displayBy].toLowerCase() === text.toLowerCase()
+      ) && text.trim() !== ""
+        ? [{ [displayBy]: text }]
+        : []),
+      ...items.filter((item) =>
         item[displayBy].toLowerCase().includes(text.toLowerCase())
-      )
-    );
+      ),
+    ]);
+    if (text.trim() === "") {
+      setFilteredItems(items);
+      //select empty
+      handleSelect({ item: { [displayBy]: "" }, dropdownvalue: true });
+    }
   };
 
-  const handleSelect = (item: { [key: string]: any }) => {
-    setSearchText(item[displayBy]); // Set the display value as search text
-    setDropdownVisible(false);
-    onSelect(item);
-  };
-
+  console.log(items, "itemmmmms");
   return (
     <View style={[styles.container]}>
       {/* Input Field with Arrow */}
@@ -73,10 +93,12 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
         <TextInput
           style={styles.input}
           placeholder={placeholder}
-          value={searchText}
+          value={searchText?.length > 0 ? searchText : value}
+          // value={searchText}
           onChangeText={handleSearch}
           onFocus={() => setDropdownVisible(true)}
         />
+
         <Dropdownimg
           width={20}
           height={20}
@@ -92,19 +114,36 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
           <ScrollView nestedScrollEnabled={true}>
             {(filteredItems.length > 0
               ? filteredItems
+              : searchText.trim() === "" // Check if searchText is empty
+              ? [{ [displayBy]: "No items available" }]
               : [{ [displayBy]: searchText }]
             ).map((item: { [key: string]: any }, index: number) => {
               return (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => handleSelect(item)}
-                  style={styles.item}
+                  onPress={() => {
+                    if (item[displayBy] !== "No items available") {
+                      handleSelect({ item });
+                    }
+                  }}
+                  style={[
+                    styles.item,
+                    item[displayBy] === "No items available" && {
+                      opacity: 0.5,
+                    }, // Dim the text
+                  ]}
+                  disabled={item[displayBy] === "No items available"} // Disable touch
                 >
                   <Text>{item[displayBy]}</Text>
-                  {!items.some(
-                    (obj: { [key: string]: any }) =>
-                      obj[displayBy] === item[displayBy]
-                  ) && <Ionicons name="add-circle" size={20} color="green" />}
+                  {/* {item[displayBy] !== "No items available" &&
+                    !items.some((obj: { [key: string]: any }) =>
+                      obj[displayBy]
+                        .toLowerCase()
+                        .includes(searchText.trim().toLowerCase())
+                    ) &&
+                    searchText.trim() !== "" && (
+                      <Ionicons name="add-circle" size={20} color="green" />
+                    )} */}
                 </TouchableOpacity>
               );
             })}
@@ -153,6 +192,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: 1,
     borderColor: "#eee",
+  },
+  addIcon: {
+    position: "absolute",
+    right: 40, // Adjust this value as needed
+    top: 26,
+    transform: [{ translateY: -10 }], // Adjust for vertical centering
   },
 });
 

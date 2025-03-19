@@ -13,9 +13,11 @@ import DepenseApportHeader from "@/components/screens/depenseapport/DepenseAppor
 import InputSearch from "@/components/shared/InputSearch";
 import DepenseApportFooter from "@/components/screens/depenseapport/DepenseApportFooter";
 import { DepenseApportInterface } from "@/types/depenseapport";
+import { useRouter } from "expo-router";
 type CompanyRoute = Company & Route;
 
 const DepenseApport = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const { id, companyName } = useLocalSearchParams<CompanyRoute>();
   const [depenseApport, setDepenseApport] = useState<DepenseApportInterface[]>(
@@ -23,8 +25,6 @@ const DepenseApport = () => {
   );
 
   const getCompanyData = async (companyId: string) => {
-    console.log("Fetching data for company ID:", companyId);
-
     const depenseApportCollection = firestore()
       .collection("Company")
       .doc(companyId)
@@ -36,19 +36,8 @@ const DepenseApport = () => {
       const depenseData = depenseApportSnapshot.docs.map((doc) =>
         doc.data()
       ) as DepenseApportInterface[];
-      // console.log(depenseData[1].category, "depenseData");
 
-      // if (depenseData[1].category) {
-      //   //fetch from firenbase
-      //   const categoryCollection = firestore()
-      //     .collection("Company")
-      //     .doc(companyId)
-      //     .collection("category");
-      //   const categorySnapshot = await categoryCollection.get();
-      //   console.log(categorySnapshot, "categorySnapshot");
-      // }
       setDepenseApport(depenseData);
-      console.log("Depense data:", depenseData);
     } else {
       setDepenseApport([]);
     }
@@ -60,8 +49,20 @@ const DepenseApport = () => {
     }
   }, [id]);
 
+  const navigateToDepenseApportDetails = (
+    depenseorapport: DepenseApportInterface
+  ) => {
+    router.push({
+      pathname: "/depenseApport/details",
+      params: {
+        data: JSON.stringify(depenseorapport),
+        companyId: id,
+      },
+    });
+  };
+
   const RenderDepenseApport = (item: DepenseApportInterface) => {
-    const isDepense = item.type === "depense"; // Assuming item.type indicates whether it's a depense or apport
+    const isDepense = item.type === "depense";
 
     return (
       <TouchableOpacity
@@ -69,6 +70,9 @@ const DepenseApport = () => {
           borderRadius: 5,
           marginBottom: 15,
           flexDirection: "row",
+        }}
+        onPress={() => {
+          navigateToDepenseApportDetails(item);
         }}
       >
         {/* Left border with centered height */}
@@ -91,11 +95,13 @@ const DepenseApport = () => {
             <Text style={styles.kpiheader}>{item.amount}</Text>
             <Text style={styles.kpiheader}>salaire</Text>
           </View>
-          <Text style={styles.description}>
-            {item.description.length > 50
-              ? item.description.substring(0, 50) + "..."
-              : item.description}
-          </Text>
+          {item?.description && (
+            <Text style={styles.description}>
+              {item?.description?.length > 50
+                ? item?.description.substring(0, 50) + "..."
+                : item.description}
+            </Text>
+          )}
           <View
             style={{
               flexDirection: "row",
