@@ -5,4 +5,5 @@ export interface DepenseApportInterface {
   type: "depense" | "apport";
   date: { seconds: number; nanoseconds: number }; // Firestore Timestamp format or JavaScript Date
   categoryPath: string[];
+  accountPath: string[];
 }

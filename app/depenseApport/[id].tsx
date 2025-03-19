@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flexGrow: 1, // Makes sure FlatList grows to fill available space
-    paddingBottom: 80, // Adds space for footer
+    // paddingBottom: 80, // Adds space for footer
   },
   kpiheader: {
     fontSize: 15,

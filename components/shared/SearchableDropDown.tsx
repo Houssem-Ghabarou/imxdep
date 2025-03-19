@@ -81,7 +81,6 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
     }
   };
 
-  console.log(items, "itemmmmms");
   return (
     <View style={[styles.container]}>
       {/* Input Field with Arrow */}
@@ -160,7 +159,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   inputContainer: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#000000",
     padding: 12,
     borderRadius: 10,

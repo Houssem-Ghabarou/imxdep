@@ -1,4 +1,11 @@
-import { View, Text, StyleSheet, Button, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Button,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import SearchableDropdown from "@/components/shared/SearchableDropDown";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,18 +15,19 @@ import { DepenseApportInterface } from "@/types/depenseapport";
 interface CategoryProps {
   categories: { [key: string]: category[] };
   selectedCategory: { [key: string]: category[] };
-  setSelectedCategory: (
-    selected:
-      | { [key: string]: category[] }
-      | ((prevSelected: { [key: string]: category[] }) => {
-          [key: string]: category[];
-        })
-  ) => void;
+  setSelectedCategory: React.Dispatch<
+    React.SetStateAction<{ [key: string]: category[] }>
+  >;
   companyId: string;
   setCategories: React.Dispatch<
     React.SetStateAction<{ [key: string]: category[] }>
   >;
   categoryPathSelected: DepenseApportInterface["categoryPath"];
+  loadingGetingCategories?: boolean;
+  dataFromDetails?: any;
+  displayBy: string;
+  collectionName: string;
+  headerlabel?: string;
 }
 
 const renderDropdowns = ({
@@ -28,6 +36,9 @@ const renderDropdowns = ({
   selectedCategory,
   setCategories,
   categoryPathSelected,
+  loadingGetingCategories,
+  collectionName,
+  displayBy,
 }: CategoryProps) => {
   const setSelectedCategoryByDropdown = (
     item: category,
@@ -67,21 +78,46 @@ const renderDropdowns = ({
     });
   };
 
-  return Object.keys(categories).map((key, index) => {
-    console.log(
-      selectedCategory[key]?.[0]?.category,
-      "selectedCategory[key]?.[0]?.category"
-    );
+  if (loadingGetingCategories) {
+    return <ActivityIndicator size="small" color="#000000" />;
+  }
+
+  if (Object.keys(categories).length === 0) {
+    //render empty dropdown
     return (
       <SearchableDropdown
-        key={`${key}-${categories[key].length}`} // Ensures a re-render on state change
-        items={categories[key]}
-        value={selectedCategory[key]?.[0]?.category}
+        items={[]}
+        value={""}
         setSelectedCategory={setSelectedCategory}
-        onSelect={(item) => setSelectedCategoryByDropdown(item, key)}
-        displayBy="category"
-        placeholder={`Search in category `}
+        onSelect={(item) => setSelectedCategoryByDropdown(item, "dropdown1")}
+        displayBy={displayBy}
+        placeholder={`Search in ${displayBy} `}
       />
+    );
+  }
+  return Object.keys(categories).map((key, index) => {
+    return (
+      <View key={`${key}-${categories[key].length}`}>
+        <SearchableDropdown
+          items={categories[key]}
+          value={selectedCategory[key]?.[0]?.category}
+          setSelectedCategory={setSelectedCategory}
+          onSelect={(item) => setSelectedCategoryByDropdown(item, key)}
+          displayBy={displayBy}
+          placeholder={`Search in category `}
+        />
+        {/* verical line on left */}
+        {index < Object.keys(categories).length - 1 && (
+          <View
+            style={{
+              height: 23,
+              width: 2,
+              // flex: 1,
+              backgroundColor: "#989898",
+            }}
+          />
+        )}
+      </View>
     );
   });
 };
@@ -93,7 +129,8 @@ const addSubCategoryFromLastSelected = (
   categories: CategoryProps["categories"],
   setCategories: React.Dispatch<
     React.SetStateAction<{ [key: string]: category[] }>
-  >
+  >,
+  collectionName: CategoryProps["collectionName"]
 ) => {
   ///calling firestore to fetch the category collection of the last selected category
   const fetchSubCategories = async () => {
@@ -118,7 +155,7 @@ const addSubCategoryFromLastSelected = (
       const subCategories = await firestore()
         .collection("Company")
         .doc(companyId)
-        .collection("category")
+        .collection(collectionName)
         .where("parentId", "==", parentId)
         .get();
 
@@ -143,7 +180,13 @@ const Category = ({
   companyId,
   setCategories,
   categoryPathSelected,
+  dataFromDetails,
+  displayBy,
+  collectionName,
+  headerlabel = "Category",
 }: CategoryProps) => {
+  const [loadingGetingCategories, setLoadingGetingCategories] =
+    useState<boolean>(true);
   const isCategorySelected =
     Object.keys(selectedCategory).length > 0 ? true : false;
 
@@ -151,76 +194,125 @@ const Category = ({
   const keys = Object.keys(categories);
 
   // Get the last key
-  const lastKey = keys[keys.length - 1];
+  const lastKey = keys?.[keys?.length - 1];
 
   // Get the length of the values array for the last key
-  const lastKeyLength = categories[lastKey].length;
+  const lastKeyLength = categories?.[lastKey]?.length;
 
   const allowAdd =
-    Object.keys(selectedCategory).length === Object.keys(categories).length;
+    Object.keys(selectedCategory)?.length === Object.keys(categories)?.length;
   const allowAddWhenLastKeyHasValue = lastKeyLength > 0;
   const lastKeySelected = selectedCategory[lastKey]?.length > 0;
 
-  useEffect(() => {
-    if (categoryPathSelected && categoryPathSelected?.length === 0) return;
+  const getCompanyCategories = async (companyId: string) => {
+    try {
+      const rootCategoriesSnapshot = await firestore()
+        .collection("Company")
+        .doc(companyId)
+        .collection(collectionName)
+        .where("parentId", "==", null) // Fetch only root categories
+        .get();
 
-    const fetchCategoriesFromPath = async () => {
-      let tempSelectedCategory: { [key: string]: category[] } = {};
-      let tempCategories: { [key: string]: category[] } = {};
-
-      for (let i = 0; i < categoryPathSelected.length; i++) {
-        const categoryId = categoryPathSelected[i];
-        const dropdownKey = `dropdown${i + 1}`;
-
-        // Fetch category data for the current ID
-        const categorySnapshot = await firestore()
-          .collection("Company")
-          .doc(companyId)
-          .collection("category")
-          .doc(categoryId)
-          .get();
-
-        if (!categorySnapshot.exists) break;
-
-        const categoryData = {
-          ...categorySnapshot.data(),
-          id: categorySnapshot.id,
-        } as category;
-
-        // Store selected category
-        tempSelectedCategory[dropdownKey] = [categoryData];
-
-        // Fetch subcategories for the current category only if within range
-        if (i < categoryPathSelected.length - 1) {
-          const subCategorySnapshot = await firestore()
-            .collection("Company")
-            .doc(companyId)
-            .collection("category")
-            .where("parentId", "==", categoryId)
-            .get();
-
-          const subCategoryList: category[] = subCategorySnapshot.docs.map(
-            (doc) => ({ ...doc.data(), id: doc.id } as category)
-          );
-
-          // Store fetched subcategories (for next dropdown)
-          tempCategories[`dropdown${i + 2}`] = subCategoryList;
-        }
+      // If no categories exist, exit early
+      if (rootCategoriesSnapshot.empty) {
+        setCategories({});
+        if (!dataFromDetails) setLoadingGetingCategories(false);
+        return;
       }
 
-      // Update state once to prevent multiple re-renders
-      console.log(tempSelectedCategory, "tempSelectedCategory");
-      console.log(tempCategories, "tempCategories");
-      setSelectedCategory(tempSelectedCategory);
-      setCategories((prev) => ({ ...prev, ...tempCategories }));
+      const fetchedCategories = rootCategoriesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        category: doc.data().category,
+      }));
+
+      setCategories((prevCategories) => ({
+        ...prevCategories,
+        [`dropdown${Object.keys(prevCategories).length + 1}`]:
+          fetchedCategories,
+      }));
+    } catch (err) {
+      console.error("Error fetching company categories:", err);
+    } finally {
+      if (!dataFromDetails) setLoadingGetingCategories(false);
+    }
+  };
+
+  useEffect(() => {
+    if (companyId) {
+      getCompanyCategories(companyId);
+    }
+  }, [companyId]);
+
+  useEffect(() => {
+    if (!categoryPathSelected || categoryPathSelected.length === 0) {
+      setLoadingGetingCategories(false);
+      return;
+    }
+
+    setLoadingGetingCategories(true);
+
+    const fetchCategoriesFromPath = async () => {
+      try {
+        let tempSelectedCategory: { [key: string]: category[] } = {};
+        let tempCategories: { [key: string]: category[] } = {};
+
+        for (let i = 0; i < categoryPathSelected.length; i++) {
+          const categoryId = categoryPathSelected[i];
+          const dropdownKey = `dropdown${i + 1}`;
+
+          // Fetch category data
+          const categoryDoc = await firestore()
+            .collection("Company")
+            .doc(companyId)
+            .collection(collectionName)
+            .doc(categoryId)
+            .get();
+
+          if (!categoryDoc.exists) break;
+
+          tempSelectedCategory[dropdownKey] = [
+            { ...categoryDoc.data(), id: categoryDoc.id } as category,
+          ];
+
+          // Fetch subcategories for the next dropdown (if applicable)
+          if (i < categoryPathSelected.length - 1) {
+            const subCategorySnapshot = await firestore()
+              .collection("Company")
+              .doc(companyId)
+              .collection(collectionName)
+              .where("parentId", "==", categoryId)
+              .get();
+
+            if (!subCategorySnapshot.empty) {
+              tempCategories[`dropdown${i + 2}`] = subCategorySnapshot.docs.map(
+                (doc) => ({ ...doc.data(), id: doc.id } as category)
+              );
+            }
+          }
+        }
+
+        // Batch update state once at the end
+        setSelectedCategory(tempSelectedCategory);
+        setCategories((prev) => ({ ...prev, ...tempCategories }));
+      } catch (error) {
+        console.error("Error fetchsinsg categories fsrom path:", error);
+      } finally {
+        setLoadingGetingCategories(false);
+      }
     };
 
     fetchCategoriesFromPath();
+
+    // // Cleanup function to reset state on unmount
+    // return () => {
+    //   setSelectedCategory({});
+    //   setCategories({});
+    // };
   }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Category </Text>
+      <Text style={styles.text}>{headerlabel} </Text>
       {renderDropdowns({
         categories,
         setSelectedCategory,
@@ -228,6 +320,9 @@ const Category = ({
         companyId,
         setCategories,
         categoryPathSelected,
+        loadingGetingCategories,
+        collectionName,
+        displayBy,
       })}
       {isCategorySelected &&
         (allowAddWhenLastKeyHasValue || lastKeySelected) && (
@@ -244,7 +339,8 @@ const Category = ({
                 companyId,
                 setSelectedCategory,
                 categories,
-                setCategories
+                setCategories,
+                collectionName
               )
             }
           >
@@ -252,7 +348,7 @@ const Category = ({
               <Ionicons name="add" size={20} color="#000000" />
             </View>
             <Text style={{ fontSize: 15, color: "#9A9A9A" }}>
-              add sub-category
+              {`Add ${collectionName}`}
             </Text>
           </TouchableOpacity>
         )}

@@ -16,6 +16,7 @@ import firestore from "@react-native-firebase/firestore";
 import { category } from "@/types/category";
 import ButtonGroup from "@/components/screens/depenseapport/details/ButtonGroupt";
 import { DepenseApportInterface } from "@/types/depenseapport";
+import Description from "@/components/screens/depenseapport/details/Description";
 
 const Details = () => {
   const data = useLocalSearchParams();
@@ -26,20 +27,37 @@ const Details = () => {
     : null;
   const categoryPathSelected =
     dataFromDetails?.categoryPath as DepenseApportInterface["categoryPath"];
+  const accountPathSelected =
+    dataFromDetails?.accountPath as DepenseApportInterface["accountPath"];
   const type = dataFromDetails?.type || (data?.type as string);
   const companyId = data?.companyId as string;
-  const [amount, setAmount] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [amount, setAmount] = useState<DepenseApportInterface["amount"]>(
+    dataFromDetails?.amount || ""
+  );
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    dataFromDetails?.date
+      ? new Date(dataFromDetails.date.seconds * 1000)
+      : new Date()
+  );
   const [categories, setCategories] = useState<any>([]);
-  const [loadingGetingCategories, setLoadingGetingCategories] =
-    useState<boolean>(true);
+  const [accountCategories, setAccountCategories] = useState<any>([]);
   const [selectedCategory, setSetselectedCategory] = useState<{
     [key: string]: category[];
   }>({} as { [key: string]: category[] });
+  const [selectedAccountCategory, setSelectedAccountCategory] = useState<{
+    [key: string]: category[];
+  }>({} as { [key: string]: category[] });
+  const [selectedAccounts, setSelectedAccounts] = useState<{
+    [key: string]: category[];
+  }>({} as { [key: string]: category[] });
+  const [description, setDescription] = useState<
+    DepenseApportInterface["description"]
+  >(dataFromDetails?.description || "");
 
   const saveCategoryPathToFirestore = async (
     categoryPath: string[],
-    companyId: string
+    companyId: string,
+    collectionName: string
   ) => {
     let parentId = null; // Root categories will have `null` as `parentId`
     let lastCategoryId = null;
@@ -58,7 +76,7 @@ const Details = () => {
           const newCategoryRef = await firestore()
             .collection("Company")
             .doc(companyId)
-            .collection("category")
+            .collection(collectionName)
             .add({
               category: category, // The category name
               parentId: parentId, // Link to the parent category
@@ -95,14 +113,34 @@ const Details = () => {
 
     const newCategoryPath = await saveCategoryPathToFirestore(
       categoryPath,
-      companyId
+      companyId,
+      "category"
+    );
+
+    console.log(selectedAccountCategory, "selecteeeeeed");
+    const accountCategoryPath = Object.keys(selectedAccountCategory)
+      .sort(
+        (a, b) =>
+          parseInt(a.replace("dropdown", "")) -
+          parseInt(b.replace("dropdown", ""))
+      )
+      .map((key) => {
+        const categoryItem = selectedAccountCategory[key][0]; // Get first selected category
+        return categoryItem.id ? categoryItem.id : categoryItem.category; // Use id if exists, otherwise use category name
+      });
+    const newAccountCategoryPath = await saveCategoryPathToFirestore(
+      accountCategoryPath,
+      companyId,
+      "account"
     );
 
     const depenseData = {
       amount: amount,
       date: selectedDate,
       categoryPath: newCategoryPath,
+      accountPath: newAccountCategoryPath,
       type: type,
+      description: description,
     };
 
     try {
@@ -113,61 +151,22 @@ const Details = () => {
         .add(depenseData);
     } catch (error) {}
   };
-  const getCompanyCategories = async (companyId: string) => {
-    try {
-      const rootCategoriesSnapshot = await firestore()
-        .collection("Company")
-        .doc(companyId)
-        .collection("category")
-        .where("parentId", "==", null) // Fetch only root categories
-        .get();
 
-      let categoryData: { [key: string]: category[] } = {};
-
-      if (!rootCategoriesSnapshot.empty) {
-        const fetchedCategories = rootCategoriesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          category: doc.data().category,
-        }));
-
-        // Find the next dropdown key (counter-based)
-        const nextDropdownKey = `dropdown${
-          Object.keys(categoryData).length + 1
-        }`;
-
-        // Add the categories to the state
-        categoryData[nextDropdownKey] = fetchedCategories;
-
-        setCategories(categoryData); // Update state with the new category data
-      } else {
-        setCategories({}); // If no categories, set the state as an empty object
-      }
-    } catch (err) {
-    } finally {
-      setLoadingGetingCategories(false);
-    }
-  };
-
-  useEffect(() => {
-    if (companyId) {
-      getCompanyCategories(companyId);
-    }
-  }, [companyId]);
-
-  useEffect(() => {
-    if (dataFromDetails?.date?.seconds) {
-      const formattedDate = new Date(dataFromDetails.date.seconds * 1000);
-
-      // Prevent setting state if the date is the same
-      if (selectedDate.getTime() !== formattedDate.getTime()) {
-        setSelectedDate(formattedDate);
-      }
-    }
-
-    if (dataFromDetails?.amount) {
-      setAmount(dataFromDetails?.amount);
-    }
-  }, [dataFromDetails]); // Only re-run when `dataFromDetails` changes
+  // useEffect(() => {
+  //   // if (dataFromDetails?.date?.seconds) {
+  //   //   const formattedDate = new Date(dataFromDetails.date.seconds * 1000);
+  //   //   // Prevent setting state if the date is the same
+  //   //   if (selectedDate.getTime() !== formattedDate.getTime()) {
+  //   //     setSelectedDate(formattedDate);
+  //   //   }
+  //   // }
+  //   // if (dataFromDetails?.amount) {
+  //   //   setAmount(dataFromDetails?.amount);
+  //   // }
+  //   // if (dataFromDetails?.description) {
+  //   //   setDescription(dataFromDetails?.description);
+  //   // }
+  // }, [dataFromDetails]); // Only re-run when `dataFromDetails` changes
 
   return (
     <ScrollView
@@ -182,19 +181,40 @@ const Details = () => {
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
         />
-        {loadingGetingCategories ? (
-          <ActivityIndicator size="small" color="#0000ff" />
-        ) : (
-          <Category
-            categoryPathSelected={categoryPathSelected}
-            companyId={companyId}
-            categories={categories}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSetselectedCategory}
-            setCategories={setCategories}
-          />
-        )}
+
+        {/* category selection */}
+        <Category
+          categoryPathSelected={categoryPathSelected}
+          companyId={companyId}
+          displayBy="category"
+          collectionName="category"
+          headerlabel="Category"
+          categories={categories}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSetselectedCategory}
+          setCategories={setCategories}
+          dataFromDetails={dataFromDetails}
+        />
+
+        {/*  description */}
+        <Description
+          description={description}
+          setDescription={setDescription}
+        />
         {/* save and delet button flex row  */}
+        {/* accout category */}
+        <Category
+          categoryPathSelected={accountPathSelected}
+          companyId={companyId}
+          displayBy="category"
+          collectionName="account"
+          headerlabel="Account"
+          categories={accountCategories}
+          selectedCategory={selectedAccountCategory}
+          setSelectedCategory={setSelectedAccountCategory}
+          setCategories={setAccountCategories}
+          dataFromDetails={dataFromDetails}
+        />
         <ButtonGroup
           onDelete={() => console.log("delete")}
           onSave={saveDepense}
@@ -207,6 +227,7 @@ const Details = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
   },
   scrollContent: {
     flexGrow: 1, // Ensure content takes up available space
