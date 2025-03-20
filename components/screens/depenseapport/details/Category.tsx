@@ -28,7 +28,86 @@ interface CategoryProps {
   displayBy: string;
   collectionName: string;
   headerlabel?: string;
+  fixedCategories?: number;
 }
+
+const addSubCategoryFromLastSelected = (
+  selectedCategory: CategoryProps["selectedCategory"],
+  companyId: CategoryProps["companyId"],
+  setSelectedCategory: CategoryProps["setSelectedCategory"],
+  categories: CategoryProps["categories"],
+  setCategories: React.Dispatch<
+    React.SetStateAction<{ [key: string]: category[] }>
+  >,
+  collectionName: CategoryProps["collectionName"],
+  fixedCategories?: CategoryProps["fixedCategories"]
+) => {
+  ///calling firestore to fetch the category collection of the last selected category
+  const fetchSubCategories = async () => {
+    try {
+      const selectedCategoryKeys = Object.keys(selectedCategory);
+      console.log(selectedCategoryKeys, "selected categoryyyy");
+      if (selectedCategoryKeys.length === 0) {
+        console.log("returning");
+        return;
+      }
+
+      const lastSelectedKey =
+        selectedCategoryKeys[selectedCategoryKeys.length - 1];
+
+      const parentId = selectedCategory[lastSelectedKey][0].id;
+      if (!parentId) {
+        //add empty object to categories
+        const nextDropdownKey = `dropdown${Object.keys(categories).length + 1}`;
+        setCategories((prev) => ({
+          ...prev,
+          [nextDropdownKey]: [],
+        }));
+        console.log("hereeeeeeee");
+        return;
+      }
+
+      const subCategories = await firestore()
+        .collection("Company")
+        .doc(companyId)
+        .collection(collectionName)
+        .where("parentId", "==", parentId)
+        .get();
+
+      const subCategoryList: category[] = subCategories.docs.map(
+        (doc) => ({ ...doc.data(), id: doc.id } as category)
+      );
+
+      console.log(fixedCategories, "====add===fixedCategories in add");
+      if (!fixedCategories) {
+        const nextDropdownKey = `dropdown${Object.keys(categories).length + 1}`;
+
+        setCategories((prev) => ({
+          ...prev,
+          [nextDropdownKey]: subCategoryList,
+        }));
+      } else {
+        //this is for fixed categories , it will add the next dropdown only if the last selected category has subcategories
+        const dropdownKeys = Object.keys(categories);
+        const nextDropdownIndex = dropdownKeys.findIndex(
+          (key) => !selectedCategory[key]?.length
+        );
+
+        console.log(nextDropdownIndex, "nexxxxxxxxt");
+
+        if (nextDropdownIndex !== -1) {
+          const nextDropdownKey = dropdownKeys[nextDropdownIndex];
+          setCategories((prev) => ({
+            ...prev,
+            [nextDropdownKey]: subCategoryList,
+          }));
+        }
+      }
+    } catch (error) {}
+  };
+
+  fetchSubCategories();
+};
 
 const renderDropdowns = ({
   categories,
@@ -39,14 +118,22 @@ const renderDropdowns = ({
   loadingGetingCategories,
   collectionName,
   displayBy,
+  fixedCategories,
+  companyId,
 }: CategoryProps) => {
+  console.log(categories, "data===categories");
+  console.log(selectedCategory, "data===selectedCategory");
   const setSelectedCategoryByDropdown = (
     item: category,
     dropdownKey: string
   ) => {
+    let newSelected = {
+      ...selectedCategory,
+      [dropdownKey]: [item],
+    };
     setSelectedCategory((prevSelected) => {
       // Merge previous selected category with the new selected category
-      const newSelected = {
+      newSelected = {
         ...prevSelected,
         [dropdownKey]: [item],
       };
@@ -64,18 +151,39 @@ const renderDropdowns = ({
       return filteredSelected;
     });
 
-    setCategories((prevCategories) => {
-      const dropdownKeys = Object.keys(prevCategories);
-      const index = dropdownKeys.indexOf(dropdownKey);
-      const newCategories = dropdownKeys
-        .slice(0, index + 1)
-        .reduce((acc, key) => {
-          acc[key] = prevCategories[key];
-          return acc;
-        }, {} as { [key: string]: category[] });
+    if (!fixedCategories) {
+      setCategories((prevCategories) => {
+        const dropdownKeys = Object.keys(prevCategories);
+        const index = dropdownKeys.indexOf(dropdownKey);
+        const newCategories = dropdownKeys
+          .slice(0, index + 1)
+          .reduce((acc, key) => {
+            acc[key] = prevCategories[key];
+            return acc;
+          }, {} as { [key: string]: category[] });
 
-      return newCategories;
-    });
+        return newCategories;
+      });
+    } else {
+      // Ensure only the first dropdown is considered as the last selected
+      const dropdownKeys = Object.keys(categories);
+      for (let i = 1; i < dropdownKeys.length; i++) {
+        setCategories((prev) => ({
+          ...prev,
+          [dropdownKeys[i]]: [],
+        }));
+      }
+
+      addSubCategoryFromLastSelected(
+        { dropdown1: newSelected["dropdown1"] }, // Always pass the first dropdown as the last selected
+        companyId,
+        setSelectedCategory,
+        categories,
+        setCategories,
+        collectionName,
+        fixedCategories
+      );
+    }
   };
 
   if (loadingGetingCategories) {
@@ -95,6 +203,30 @@ const renderDropdowns = ({
       />
     );
   }
+
+  //fixed categoris
+
+  if (fixedCategories) {
+    return (
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+        {Object.keys(categories)
+          .slice(0, fixedCategories)
+          .map((key) => (
+            <View key={`${key}-${categories[key].length}`} style={{ flex: 1 }}>
+              <SearchableDropdown
+                items={categories[key]}
+                value={selectedCategory[key]?.[0]?.category}
+                setSelectedCategory={setSelectedCategory}
+                onSelect={(item) => setSelectedCategoryByDropdown(item, key)}
+                displayBy={displayBy}
+                placeholder={`Search in category `}
+              />
+            </View>
+          ))}
+      </View>
+    );
+  }
+
   return Object.keys(categories).map((key, index) => {
     return (
       <View key={`${key}-${categories[key].length}`}>
@@ -106,13 +238,12 @@ const renderDropdowns = ({
           displayBy={displayBy}
           placeholder={`Search in category `}
         />
-        {/* verical line on left */}
+        {/* vertical line on left */}
         {index < Object.keys(categories).length - 1 && (
           <View
             style={{
               height: 23,
               width: 2,
-              // flex: 1,
               backgroundColor: "#989898",
             }}
           />
@@ -122,57 +253,6 @@ const renderDropdowns = ({
   });
 };
 
-const addSubCategoryFromLastSelected = (
-  selectedCategory: CategoryProps["selectedCategory"],
-  companyId: CategoryProps["companyId"],
-  setSelectedCategory: CategoryProps["setSelectedCategory"],
-  categories: CategoryProps["categories"],
-  setCategories: React.Dispatch<
-    React.SetStateAction<{ [key: string]: category[] }>
-  >,
-  collectionName: CategoryProps["collectionName"]
-) => {
-  ///calling firestore to fetch the category collection of the last selected category
-  const fetchSubCategories = async () => {
-    try {
-      const selectedCategoryKeys = Object.keys(selectedCategory);
-      if (selectedCategoryKeys.length === 0) return;
-
-      const lastSelectedKey =
-        selectedCategoryKeys[selectedCategoryKeys.length - 1];
-
-      const parentId = selectedCategory[lastSelectedKey][0].id;
-      if (!parentId) {
-        //add empty object to categories
-        const nextDropdownKey = `dropdown${Object.keys(categories).length + 1}`;
-        setCategories((prev) => ({
-          ...prev,
-          [nextDropdownKey]: [],
-        }));
-        return;
-      }
-
-      const subCategories = await firestore()
-        .collection("Company")
-        .doc(companyId)
-        .collection(collectionName)
-        .where("parentId", "==", parentId)
-        .get();
-
-      const subCategoryList: category[] = subCategories.docs.map(
-        (doc) => ({ ...doc.data(), id: doc.id } as category)
-      );
-      const nextDropdownKey = `dropdown${Object.keys(categories).length + 1}`;
-
-      setCategories((prev) => ({
-        ...prev,
-        [nextDropdownKey]: subCategoryList,
-      }));
-    } catch (error) {}
-  };
-
-  fetchSubCategories();
-};
 const Category = ({
   categories,
   setSelectedCategory,
@@ -184,7 +264,9 @@ const Category = ({
   displayBy,
   collectionName,
   headerlabel = "Category",
+  fixedCategories,
 }: CategoryProps) => {
+  console.log(categories, "categoriessssssss");
   const [loadingGetingCategories, setLoadingGetingCategories] =
     useState<boolean>(true);
   const isCategorySelected =
@@ -204,6 +286,13 @@ const Category = ({
   const allowAddWhenLastKeyHasValue = lastKeyLength > 0;
   const lastKeySelected = selectedCategory[lastKey]?.length > 0;
 
+  // Initialize categories arrayy with fixed categories count
+  useEffect(() => {
+    if (!fixedCategories) {
+      setCategories({});
+    }
+  }, [fixedCategories, setCategories]);
+
   const getCompanyCategories = async (companyId: string) => {
     try {
       const rootCategoriesSnapshot = await firestore()
@@ -215,7 +304,7 @@ const Category = ({
 
       // If no categories exist, exit early
       if (rootCategoriesSnapshot.empty) {
-        setCategories({});
+        setCategories({ dropdown1: [] }); // Ensure the first dropdown is always set
         if (!dataFromDetails) setLoadingGetingCategories(false);
         return;
       }
@@ -225,13 +314,20 @@ const Category = ({
         category: doc.data().category,
       }));
 
-      setCategories((prevCategories) => ({
-        ...prevCategories,
-        [`dropdown${Object.keys(prevCategories).length + 1}`]:
-          fetchedCategories,
-      }));
+      setCategories({
+        dropdown1: fetchedCategories, // Always set the first dropdown
+      });
+
+      if (fixedCategories) {
+        //conitnue generating empty dropdowns
+        for (let i = 2; i <= fixedCategories; i++) {
+          setCategories((prev) => ({
+            ...prev,
+            [`dropdown${i}`]: [],
+          }));
+        }
+      }
     } catch (err) {
-      console.error("Error fetching company categories:", err);
     } finally {
       if (!dataFromDetails) setLoadingGetingCategories(false);
     }
@@ -323,9 +419,11 @@ const Category = ({
         loadingGetingCategories,
         collectionName,
         displayBy,
+        fixedCategories,
       })}
       {isCategorySelected &&
-        (allowAddWhenLastKeyHasValue || lastKeySelected) && (
+        (allowAddWhenLastKeyHasValue || lastKeySelected) &&
+        !fixedCategories && (
           <TouchableOpacity
             style={{
               flexDirection: "row",

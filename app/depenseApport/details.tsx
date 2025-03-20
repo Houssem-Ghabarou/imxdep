@@ -17,6 +17,7 @@ import { category } from "@/types/category";
 import ButtonGroup from "@/components/screens/depenseapport/details/ButtonGroupt";
 import { DepenseApportInterface } from "@/types/depenseapport";
 import Description from "@/components/screens/depenseapport/details/Description";
+import Financial from "@/components/screens/depenseapport/details/Financial";
 
 const Details = () => {
   const data = useLocalSearchParams();
@@ -215,6 +216,7 @@ const Details = () => {
           setCategories={setAccountCategories}
           dataFromDetails={dataFromDetails}
         />
+        <Financial companyId={companyId} dataFromDetails={dataFromDetails} />
         <ButtonGroup
           onDelete={() => console.log("delete")}
           onSave={saveDepense}
