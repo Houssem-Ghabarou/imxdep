@@ -8,6 +8,7 @@ export interface DepenseApportInterface {
   accountPath: string[];
   finance: string[];
   financeDebits: string[];
+  firstCategory: string;
 }
 
 export interface finance {

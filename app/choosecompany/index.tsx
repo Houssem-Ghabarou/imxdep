@@ -12,8 +12,9 @@ import firestore from "@react-native-firebase/firestore";
 import { useRouter } from "expo-router";
 import { Company } from "@/types/company";
 import Toast from "react-native-toast-message";
-
+import { useIsFocused } from "@react-navigation/native";
 const ChooseCompany = () => {
+  const isFocused = useIsFocused();
   const router = useRouter();
   const [selectedCompany, setSelectedCompany] = useState<Company>();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -34,8 +35,10 @@ const ChooseCompany = () => {
   };
 
   useEffect(() => {
-    getCompanies();
-  }, []);
+    if (isFocused) {
+      getCompanies();
+    }
+  }, [isFocused]);
 
   const navigateToDepenseApport = () => {
     if (!selectedCompany) {
@@ -52,6 +55,58 @@ const ChooseCompany = () => {
         companyName: selectedCompany?.companyName,
       },
     });
+  };
+  const createAndNavigateToDepenseApport = async () => {
+    if (selectedCompany?.companyName === "" || !selectedCompany) {
+      Toast.show({
+        type: "error",
+        text1: "Sélectionnez une entreprise",
+      });
+      return;
+    }
+
+    try {
+      const companiesCollection = firestore().collection("Company");
+      const existingCompanyQuery = await companiesCollection
+        .where("companyName", "==", selectedCompany.companyName)
+        .get();
+
+      if (!existingCompanyQuery.empty) {
+        // If a company with the same name exists, get its ID and navigate
+        const existingCompany = existingCompanyQuery.docs[0];
+        router.push({
+          pathname: "/depenseApport/[id]",
+          params: {
+            id: existingCompany.id,
+            companyName: existingCompany.data().companyName,
+          },
+        });
+      } else if (!selectedCompany?.id) {
+        // If no company exists and no ID is provided, create a new company
+        const newCompany = {
+          companyName: selectedCompany?.companyName || "New Company",
+          createdAt: firestore.FieldValue.serverTimestamp(),
+        };
+        const companyRef = await companiesCollection.add(newCompany);
+        const newCompanyId = companyRef.id;
+
+        router.push({
+          pathname: "/depenseApport/[id]",
+          params: {
+            id: newCompanyId,
+            companyName: newCompany.companyName,
+          },
+        });
+      } else {
+        // If the company already has an ID, navigate directly
+        navigateToDepenseApport();
+      }
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Erreur lors de la gestion de l'entreprise",
+      });
+    }
   };
 
   return (
@@ -71,7 +126,7 @@ const ChooseCompany = () => {
 
           <CustomButton
             title="Continue"
-            onPressFunction={navigateToDepenseApport}
+            onPressFunction={createAndNavigateToDepenseApport}
             height={60}
           />
         </>

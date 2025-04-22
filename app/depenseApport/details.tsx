@@ -5,6 +5,7 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
@@ -22,8 +23,58 @@ import FinancialParent from "@/components/screens/depenseapport/details/financia
 import { saveCategoryPathToFirestore } from "@/utils/savePathTiFireStore";
 import { extractCategoryPath } from "@/utils/extractPathFromSelected";
 import Media from "@/components/screens/depenseapport/details/media/Media";
+import storage from "@react-native-firebase/storage";
 
 const Details = () => {
+  const uploadFile = async (file) => {
+    const fileName = file.name || `file-${Date.now()}`;
+    const contentType =
+      file.mimeType ||
+      getMimeTypeFromName(file.name) ||
+      "application/octet-stream";
+    const path = `uploads/${fileName}`;
+
+    const uploadUri =
+      Platform.OS === "ios" ? file.uri.replace("file://", "") : file.uri;
+    const reference = storage().ref(path);
+
+    const task = reference.putFile(uploadUri, { contentType });
+
+    return new Promise((resolve, reject) => {
+      task.on("state_changed", (snapshot) => {
+        console.log(
+          `Uploading ${fileName}: ${snapshot.bytesTransferred} / ${snapshot.totalBytes}`
+        );
+      });
+
+      task
+        .then(async () => {
+          const downloadURL = await reference.getDownloadURL();
+          resolve({ ...file, downloadURL });
+        })
+        .catch(reject);
+    });
+  };
+
+  const getMimeTypeFromName = (fileName) => {
+    if (!fileName) return null;
+    if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg"))
+      return "image/jpeg";
+    if (fileName.endsWith(".png")) return "image/png";
+    if (fileName.endsWith(".pdf")) return "application/pdf";
+    if (fileName.endsWith(".mp4")) return "video/mp4";
+    return null;
+  };
+  const uploadAllFiles = async (files) => {
+    try {
+      const uploaded = await Promise.all(files.map(uploadFile));
+      console.log("All uploaded:", uploaded);
+      return uploaded; // Array with download URLs
+    } catch (error) {
+      console.error("Upload error:", error);
+    }
+  };
+
   const data = useLocalSearchParams();
   const dataFromDetails = data?.data
     ? typeof data?.data === "string"
@@ -75,11 +126,14 @@ const Details = () => {
     { financePath?: string[]; financeAmount?: number }[]
   >([]);
   const [loadingSaving, setLoadingSaving] = useState(false);
+  const [iamgesSelected, setImagesSelected] = useState<any>(null);
+
   const saveDepense = async () => {
     try {
-      if (Object.keys(selectedCategory).length === 0) return;
+      // if (Object.keys(selectedCategory).length === 0) return;
 
       // Get all selected categories in order
+      console.log(selectedCategory, " selectedCategory");
       const categoryPath = extractCategoryPath(selectedCategory);
 
       const newCategoryPath = await saveCategoryPathToFirestore(
@@ -136,11 +190,17 @@ const Details = () => {
       }
       // Combine credits and debits into a single object
 
+      if (iamgesSelected) {
+        const uploadedItems = await uploadAllFiles(iamgesSelected);
+        console.log("Uploaded Files:", uploadedItems);
+      }
+
       const depenseData = {
         amount: amount,
         date: selectedDate,
         categoryPath: newCategoryPath,
         accountPath: newAccountCategoryPath,
+        firstCategory: selectedCategory?.dropdown1?.[0]?.category,
         finance: credits,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -216,18 +276,20 @@ const Details = () => {
         />
 
         {/* category selection */}
-        <Category
-          categoryPathSelected={categoryPathSelected}
-          companyId={companyId}
-          displayBy="category"
-          collectionName="category"
-          headerlabel="Category"
-          categories={categories}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSetselectedCategory}
-          setCategories={setCategories}
-          dataFromDetails={dataFromDetails}
-        />
+        {type === "depense" && (
+          <Category
+            categoryPathSelected={categoryPathSelected}
+            companyId={companyId}
+            displayBy="category"
+            collectionName="category"
+            headerlabel="Category"
+            categories={categories}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSetselectedCategory}
+            setCategories={setCategories}
+            dataFromDetails={dataFromDetails}
+          />
+        )}
 
         {/*  description */}
         <Description
@@ -272,7 +334,10 @@ const Details = () => {
           setGetAllFinanceData={setGetAllFinanceDataDebit}
         />
 
-        <Media />
+        <Media
+          iamgesSelected={iamgesSelected}
+          setImagesSelected={setImagesSelected}
+        />
 
         {loadingSaving ? (
           <ActivityIndicator

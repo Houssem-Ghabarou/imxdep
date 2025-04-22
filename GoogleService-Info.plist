@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>420666729017-6e7g7sona5gvq8q6o447mr3g1reod47c.apps.googleusercontent.com</string>
+	<string>514782399465-6kmpv357a55p9q2na8tr0t77jg70h22v.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.420666729017-6e7g7sona5gvq8q6o447mr3g1reod47c</string>
+	<string>com.googleusercontent.apps.514782399465-6kmpv357a55p9q2na8tr0t77jg70h22v</string>
 	<key>API_KEY</key>
-	<string>AIzaSyAM9N4PhIazKAIX1TOGfi4g_OqrKaQpR4M</string>
+	<string>AIzaSyDPuMQ2tXCaQi5ocOmgqOixKPWMsKE7kgg</string>
 	<key>GCM_SENDER_ID</key>
-	<string>420666729017</string>
+	<string>514782399465</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.imaxeam.imxdep</string>
 	<key>PROJECT_ID</key>
-	<string>imxdep</string>
+	<string>imx-accounting</string>
 	<key>STORAGE_BUCKET</key>
-	<string>imxdep.firebasestorage.app</string>
+	<string>imx-accounting.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:420666729017:ios:7118282e7ed997fada63e8</string>
+	<string>1:514782399465:ios:e245ae7304ba1adb899978</string>
 </dict>
 </plist>

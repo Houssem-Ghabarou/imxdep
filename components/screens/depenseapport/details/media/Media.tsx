@@ -22,12 +22,17 @@ import * as DocumentPicker from "expo-document-picker";
 //@ts-ignore
 import VideoPlayer, { type VideoPlayerRef } from "react-native-video-player";
 
-const Media = () => {
+const Media = ({
+  iamgesSelected,
+  setImagesSelected,
+}: {
+  iamgesSelected: any;
+  setImagesSelected: React.Dispatch<React.SetStateAction<any>>;
+}) => {
   const playerRef = useRef<VideoPlayerRef>(null);
 
   const placeholders = Array(5).fill(null);
   const [openCamera, setOpenCamera] = useState(false);
-  const [iamgesSelected, setImagesSelected] = useState<any>(null);
 
   const pickImage = async () => {
     const permission = await requestGallery();
@@ -69,13 +74,15 @@ const Media = () => {
         const successResult =
           result as DocumentPicker.DocumentPickerSuccessResult;
 
-        setImagesSelected((prevSelectedDocuments: any) => [
-          ...prevSelectedDocuments,
-          ...successResult.assets.map((asset) => ({
+        setImagesSelected((prevSelectedDocuments: any) => {
+          const newDocuments = successResult.assets.map((asset) => ({
             ...asset,
             type: "document",
-          })),
-        ]);
+          }));
+          return prevSelectedDocuments
+            ? [...prevSelectedDocuments, ...newDocuments]
+            : newDocuments;
+        });
       } else {
       }
     } catch (error) {}

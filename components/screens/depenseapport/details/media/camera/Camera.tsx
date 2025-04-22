@@ -231,7 +231,9 @@ export default function CameraFunction({
                       size={32}
                       color="white"
                     />
-                    <Text style={styles.previewButtonText}>Use Photo</Text>
+                    <Text style={styles.previewButtonText}>
+                      {video?.uri ? "Select Video" : "Select Image"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>

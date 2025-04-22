@@ -36,6 +36,7 @@ const FinancialParent = ({
         .fill(null)
         .map((_, index) => (
           <View
+            key={index}
             style={{
               marginTop: 15,
             }}

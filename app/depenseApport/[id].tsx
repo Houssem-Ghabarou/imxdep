@@ -4,6 +4,7 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Company } from "@/types/company";
@@ -24,25 +25,33 @@ const DepenseApport = () => {
   const [depenseApport, setDepenseApport] = useState<DepenseApportInterface[]>(
     []
   );
+  const [loading, setLoading] = useState(false);
 
   const getCompanyData = async (companyId: string) => {
-    const depenseApportCollection = firestore()
-      .collection("Company")
-      .doc(companyId)
-      .collection("depsneapport")
-      .orderBy("createdAt", "desc"); // Order by createdAt in descending order to get the latest first
+    setLoading(true);
+    try {
+      const depenseApportCollection = firestore()
+        .collection("Company")
+        .doc(companyId)
+        .collection("depsneapport")
+        .orderBy("createdAt", "desc"); // Order by createdAt in descending order to get the latest first
 
-    const depenseApportSnapshot = await depenseApportCollection.get();
+      const depenseApportSnapshot = await depenseApportCollection.get();
 
-    if (!depenseApportSnapshot.empty) {
-      const depenseData = depenseApportSnapshot.docs.map((doc) => ({
-        ...doc.data(),
-        id: doc.id, // Include the document ID
-      })) as DepenseApportInterface[];
+      if (!depenseApportSnapshot.empty) {
+        const depenseData = depenseApportSnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id, // Include the document ID
+        })) as DepenseApportInterface[];
 
-      setDepenseApport(depenseData);
-    } else {
+        setDepenseApport(depenseData);
+      } else {
+        setDepenseApport([]);
+      }
+    } catch {
       setDepenseApport([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -66,7 +75,8 @@ const DepenseApport = () => {
   };
 
   const RenderDepenseApport = (item: DepenseApportInterface) => {
-    const isDepense = item.type === "depense";
+    const isDepense = item?.type === "depense";
+    const firstCategory = item?.firstCategory;
 
     return (
       <TouchableOpacity
@@ -97,7 +107,7 @@ const DepenseApport = () => {
           >
             <Text style={styles.kpiheader}>25.11.2024</Text>
             <Text style={styles.kpiheader}>{item.amount}</Text>
-            <Text style={styles.kpiheader}>salaire</Text>
+            <Text style={styles.kpiheader}>{firstCategory || ""}</Text>
           </View>
           {item?.description && (
             <Text style={styles.description}>
@@ -136,6 +146,15 @@ const DepenseApport = () => {
 
       {/* FlatList for depenseApport */}
       <FlatList
+        ListEmptyComponent={
+          loading ? (
+            <ActivityIndicator size="large" color="#21A67C" />
+          ) : (
+            <Text style={{ textAlign: "center", marginTop: 20 }}>
+              Depense et Apport non trouvés
+            </Text>
+          )
+        }
         data={depenseApport}
         renderItem={({ item }) => <RenderDepenseApport {...item} />}
         keyExtractor={(item, index) => index.toString()}
