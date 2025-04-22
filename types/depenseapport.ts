@@ -1,5 +1,5 @@
 export interface DepenseApportInterface {
-  //   id: string;
+  id: string;
   amount: string;
   description: string;
   type: "depense" | "apport";
@@ -7,6 +7,7 @@ export interface DepenseApportInterface {
   categoryPath: string[];
   accountPath: string[];
   finance: string[];
+  financeDebits: string[];
 }
 
 export interface finance {

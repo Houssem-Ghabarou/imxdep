@@ -46,9 +46,7 @@ const addSubCategoryFromLastSelected = (
   const fetchSubCategories = async () => {
     try {
       const selectedCategoryKeys = Object.keys(selectedCategory);
-      console.log(selectedCategoryKeys, "selected categoryyyy");
       if (selectedCategoryKeys.length === 0) {
-        console.log("returning");
         return;
       }
 
@@ -63,7 +61,6 @@ const addSubCategoryFromLastSelected = (
           ...prev,
           [nextDropdownKey]: [],
         }));
-        console.log("hereeeeeeee");
         return;
       }
 
@@ -78,7 +75,6 @@ const addSubCategoryFromLastSelected = (
         (doc) => ({ ...doc.data(), id: doc.id } as category)
       );
 
-      console.log(fixedCategories, "====add===fixedCategories in add");
       if (!fixedCategories) {
         const nextDropdownKey = `dropdown${Object.keys(categories).length + 1}`;
 
@@ -92,8 +88,6 @@ const addSubCategoryFromLastSelected = (
         const nextDropdownIndex = dropdownKeys.findIndex(
           (key) => !selectedCategory[key]?.length
         );
-
-        console.log(nextDropdownIndex, "nexxxxxxxxt");
 
         if (nextDropdownIndex !== -1) {
           const nextDropdownKey = dropdownKeys[nextDropdownIndex];
@@ -121,8 +115,6 @@ const renderDropdowns = ({
   fixedCategories,
   companyId,
 }: CategoryProps) => {
-  console.log(categories, "data===categories");
-  console.log(selectedCategory, "data===selectedCategory");
   const setSelectedCategoryByDropdown = (
     item: category,
     dropdownKey: string
@@ -266,7 +258,6 @@ const Category = ({
   headerlabel = "Category",
   fixedCategories,
 }: CategoryProps) => {
-  console.log(categories, "categoriessssssss");
   const [loadingGetingCategories, setLoadingGetingCategories] =
     useState<boolean>(true);
   const isCategorySelected =

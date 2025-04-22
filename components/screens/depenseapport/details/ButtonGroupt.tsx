@@ -3,21 +3,30 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 interface ButtonGroupProps {
   onDelete: () => void;
   onSave: () => void;
+  dataFromDetails: any; // Replace with the actual type if known
 }
-const ButtonGroup = ({ onDelete, onSave }: ButtonGroupProps) => {
+const ButtonGroup = ({
+  onDelete,
+  onSave,
+  dataFromDetails,
+}: ButtonGroupProps) => {
   return (
     <View style={styles.buttonContainer}>
-      <TouchableOpacity
-        style={[styles.button, styles.deleteButton]}
-        onPress={onDelete}
-      >
-        <Text style={styles.buttonText}>Delete</Text>
-      </TouchableOpacity>
+      {dataFromDetails && (
+        <TouchableOpacity
+          style={[styles.button, styles.deleteButton]}
+          onPress={onDelete}
+        >
+          <Text style={styles.buttonText}>Delete</Text>
+        </TouchableOpacity>
+      )}
       <TouchableOpacity
         style={[styles.button, styles.saveButton]}
         onPress={onSave}
       >
-        <Text style={styles.buttonText}>Save</Text>
+        <Text style={styles.buttonText}>
+          {dataFromDetails ? "Update" : "Save"}
+        </Text>
       </TouchableOpacity>
     </View>
   );

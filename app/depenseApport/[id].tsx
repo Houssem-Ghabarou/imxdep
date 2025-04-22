@@ -14,6 +14,7 @@ import InputSearch from "@/components/shared/InputSearch";
 import DepenseApportFooter from "@/components/screens/depenseapport/DepenseApportFooter";
 import { DepenseApportInterface } from "@/types/depenseapport";
 import { useRouter } from "expo-router";
+import { useIsFocused } from "@react-navigation/native";
 type CompanyRoute = Company & Route;
 
 const DepenseApport = () => {
@@ -28,14 +29,16 @@ const DepenseApport = () => {
     const depenseApportCollection = firestore()
       .collection("Company")
       .doc(companyId)
-      .collection("depsneapport");
+      .collection("depsneapport")
+      .orderBy("createdAt", "desc"); // Order by createdAt in descending order to get the latest first
 
     const depenseApportSnapshot = await depenseApportCollection.get();
 
     if (!depenseApportSnapshot.empty) {
-      const depenseData = depenseApportSnapshot.docs.map((doc) =>
-        doc.data()
-      ) as DepenseApportInterface[];
+      const depenseData = depenseApportSnapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id, // Include the document ID
+      })) as DepenseApportInterface[];
 
       setDepenseApport(depenseData);
     } else {
@@ -43,11 +46,12 @@ const DepenseApport = () => {
     }
   };
 
+  const isFocused = useIsFocused();
   useEffect(() => {
-    if (id) {
+    if (id && isFocused) {
       getCompanyData(id);
     }
-  }, [id]);
+  }, [id, isFocused]);
 
   const navigateToDepenseApportDetails = (
     depenseorapport: DepenseApportInterface
